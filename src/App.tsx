@@ -377,7 +377,7 @@ const AttendanceTab: React.FC<{
         `✅ Data ${student.name} berhasil dikirim dengan keterangan:`,
         keteranganValue
       );
-      loadExistingAttendanceData();
+      loadExistingAttendanceData(false);
       onRecapRefresh();
     } catch (error) {
       console.error("❌ Gagal kirim data:", error);
@@ -395,12 +395,6 @@ const AttendanceTab: React.FC<{
 
   const handleScanSuccess = async (qrData: string) => {
     try {
-      // Hentikan interval PERTAMA KALI sebelum apapun
-      if (scannerIntervalRef.current) {
-        clearInterval(scannerIntervalRef.current);
-        scannerIntervalRef.current = null;
-      }
-
       // Prevent duplicate scans
       if (qrData === lastScannedId) return;
       setLastScannedId(qrData);
@@ -420,21 +414,27 @@ const AttendanceTab: React.FC<{
       if (!student) {
         playErrorSound();
         alert(`❌ Siswa dengan NISN ${nisn} tidak ditemukan!`);
-        return;
+        return; // interval tetap jalan, scanner lanjut
       }
 
       // Check if already scanned
       if (scannedStudents.has(student.id)) {
         playErrorSound();
         alert(`⚠️ ${student.name} sudah diabsen sebelumnya!`);
-        return;
+        return; // interval tetap jalan, scanner lanjut
       }
 
       // Check if already has data in database
       if (existingStudentIds.has(student.id)) {
         playErrorSound();
         alert(`⚠️ ${student.name} sudah memiliki data absensi di database!`);
-        return;
+        return; // interval tetap jalan, scanner lanjut
+      }
+
+      // Hentikan interval HANYA jika scan berhasil (siswa valid & belum diabsen)
+      if (scannerIntervalRef.current) {
+        clearInterval(scannerIntervalRef.current);
+        scannerIntervalRef.current = null;
       }
 
       // Set attendance locally
@@ -468,7 +468,7 @@ const AttendanceTab: React.FC<{
       playSuccessSound();
       showSuccessNotification(student.name, student.foto);
 
-      // ✅ KIRIM DATA LANGSUNG KE SERVER
+      // Kirim data ke server
       await sendAttendanceData(student);
     } catch (error) {
       console.error("Scan processing error:", error);
@@ -901,9 +901,9 @@ const AttendanceTab: React.FC<{
   }, []);
 
   // Load existing attendance data
-  const loadExistingAttendanceData = async () => {
+  const loadExistingAttendanceData = async (showLoading: boolean = true) => {
     setIsLoadingExistingData(true);
-    onLoadingChange(true);
+    if (showLoading) onLoadingChange(true);
     setExistingStudentIds(new Set());
     setExistingAttendanceData([]);
 

@@ -62,7 +62,7 @@ type AttendanceStatus = "Hadir" | "Izin" | "Sakit" | "Alpha";
 
 interface AttendanceRecord {
   [date: string]: {
-    [studentId: string]: AttendanceStatus;
+    [studentId: string]: AttendanceStatus | "";
   };
 }
 
@@ -941,7 +941,7 @@ const AttendanceTab: React.FC<{
                 existingRecord.keterangan || ""; // TAMBAHKAN
               existingIds.add(student.id);
             } else {
-              existingAttendanceRecord[student.id] = "Hadir";
+              existingAttendanceRecord[student.id] = "" as any;
               existingKeteranganRecord[student.id] = ""; // TAMBAHKAN
             }
           });
@@ -980,7 +980,7 @@ const AttendanceTab: React.FC<{
   useEffect(() => {
     if (students.length && !attendance[date]) {
       const init: { [key: string]: AttendanceStatus } = {};
-      students.forEach((s) => (init[s.id] = "Hadir"));
+      students.forEach((s) => (init[s.id] = "" as any));
       setAttendance((prev) => ({ ...prev, [date]: init }));
     }
   }, [date, students, attendance]);
@@ -1142,7 +1142,7 @@ const AttendanceTab: React.FC<{
   const getAttendanceSummary = (): StatusSummary => {
     const summary: StatusSummary = { Hadir: 0, Izin: 0, Sakit: 0, Alpha: 0 };
     filteredStudents.forEach((s) => {
-      const status = (attendance[date]?.[s.id] || "Hadir") as AttendanceStatus;
+      const status = attendance[date]?.[s.id] as AttendanceStatus;
       summary[status]++;
     });
     return summary;
@@ -1921,7 +1921,8 @@ const AttendanceTab: React.FC<{
                                   onClick={() => setStatus(s.id, status)}
                                   style={{ width: "1cm" }}
                                   className={`px-1 py-0.5 rounded-lg text-xs font-medium transition-colors ${
-                                    attendance[date]?.[s.id] === status
+                                    attendance[date]?.[s.id] === status &&
+                                    attendance[date]?.[s.id] !== ""
                                       ? `${statusColor[status]} text-white opacity-70`
                                       : "bg-gray-200 text-gray-500 cursor-not-allowed"
                                   }`}

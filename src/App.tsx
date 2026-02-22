@@ -33,7 +33,7 @@ ChartJS.register(
 );
 
 const endpoint =
-  "https://script.google.com/macros/s/AKfycbybqGvsB5D4q9S2o4SA6CuI8v9qaUVf1ry1nfAkOeiR9HwFTDVkoBBUEwJhHcU5uZoJ/exec";
+  "https://script.google.com/macros/s/AKfycbz3olRv2RQQVJLiMryQMB11IsJMo8hMuTpPSNWzUv3Foxr0zrN0xEA9flcSnI7BYGZU/exec";
 const SHEET_SEMESTER1 = "RekapSemester1";
 const SHEET_SEMESTER2 = "RekapSemester2";
 
@@ -332,6 +332,13 @@ const AttendanceTab: React.FC<{
     console.log("🛑 Scanner stopped dan popup/overlay dibersihkan");
   };
 
+  const getCurrentTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, "0")}:${String(
+      now.getMinutes()
+    ).padStart(2, "0")}`;
+  };
+
   // ===== FUNGSI KIRIM DATA LANGSUNG =====
   const sendAttendanceData = async (student: Student) => {
     if (sendingLockRef.current.has(student.nisn)) {
@@ -348,6 +355,8 @@ const AttendanceTab: React.FC<{
     const keteranganValue =
       (keterangan[date] && keterangan[date][student.id]) || "";
 
+    const jamSekarang = getCurrentTime(); //
+
     console.log("📤 Mengirim data:", {
       // TAMBAHKAN LOG
       nama: student.name,
@@ -361,7 +370,8 @@ const AttendanceTab: React.FC<{
         kelas: student.kelas || "N/A",
         nisn: student.nisn || "N/A",
         status: "Hadir",
-        keterangan: keteranganValue, // ✅ PERBAIKAN
+        keterangan: keteranganValue,
+        jam: getCurrentTime(),
       },
     ];
 
@@ -1093,6 +1103,8 @@ const AttendanceTab: React.FC<{
       return;
     }
 
+    const jamSekarang = getCurrentTime();
+
     const data = studentsToSave.map((s) => {
       // ✅ PERBAIKAN: Ambil keterangan dengan benar
       const keteranganValue =
@@ -1106,7 +1118,8 @@ const AttendanceTab: React.FC<{
         kelas: s.kelas || "N/A",
         nisn: s.nisn || "N/A",
         status: attendance[date]?.[s.id] || "Hadir",
-        keterangan: keteranganValue, // ✅ PERBAIKAN
+        keterangan: keteranganValue,
+        jam: attendance[date]?.[s.id] === "Hadir" ? jamSekarang : "",
       };
     });
 
@@ -1326,7 +1339,6 @@ const AttendanceTab: React.FC<{
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              disabled={true}
               className="border border-gray-300 rounded-lg px-1 py-0.5 shadow-sm bg-gray-100 text-gray-500 cursor-not-allowed"
             />
           </div>
@@ -1947,6 +1959,15 @@ const AttendanceTab: React.FC<{
                               disabled={true}
                               className="w-full px-2 py-1 text-xs border rounded bg-gray-100 text-gray-500 cursor-not-allowed"
                             />
+
+                            {isExisting && (
+                              <p className="text-xs text-gray-400 mt-1">
+                                🕐{" "}
+                                {existingAttendanceData.find(
+                                  (r: any) => r.nama === s.name
+                                )?.jam || "-"}
+                              </p>
+                            )}
                           </div>
                         </td>
                       </tr>

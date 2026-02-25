@@ -647,10 +647,15 @@ const AttendanceTab: React.FC<{
         const result = await response.json();
         if (result.success) {
           setFotoAbsensiUrl(result.fotoUrl);
+        } else {
+          setFotoAbsensiUrl(null); // ✅ reset jika tidak ada foto
         }
+      } else {
+        setFotoAbsensiUrl(null); // ✅ reset jika response tidak ok
       }
     } catch (error) {
       console.error("Error loading foto absensi:", error);
+      setFotoAbsensiUrl(null); // ✅ reset jika error
     }
   };
 
@@ -978,6 +983,10 @@ const AttendanceTab: React.FC<{
     }
   };
 
+  const allStudentsHaveData =
+    filteredStudents.length > 0 &&
+    existingStudentIds.size === filteredStudents.length;
+
   useEffect(() => {
     if (students.length > 0) {
       loadExistingAttendanceData();
@@ -1012,7 +1021,7 @@ const AttendanceTab: React.FC<{
     } else {
       setFotoAbsensiUrl(null);
     }
-  }, [date, selectedKelas, students]);
+  }, [date, selectedKelas, students, allStudentsHaveData]); // ✅ tambah allStudentsHaveData
 
   useEffect(() => {
     // Cleanup function saat component unmount
@@ -1245,9 +1254,6 @@ const AttendanceTab: React.FC<{
   };
 
   const attendanceSummary = getAttendanceSummary();
-  const allStudentsHaveData =
-    filteredStudents.length > 0 &&
-    existingStudentIds.size === filteredStudents.length;
 
   if (students.length === 0) {
     return (

@@ -33,7 +33,7 @@ ChartJS.register(
 );
 
 const endpoint =
-  "https://script.google.com/macros/s/AKfycbz3olRv2RQQVJLiMryQMB11IsJMo8hMuTpPSNWzUv3Foxr0zrN0xEA9flcSnI7BYGZU/exec";
+  "https://script.google.com/macros/s/AKfycbwIVL9rX4PfUehQvp1bOoUf91HwIe0t47ctodTcnkrkpBeZPKujO2pgOU5rkDVikN7e/exec";
 const SHEET_SEMESTER1 = "RekapSemester1";
 const SHEET_SEMESTER2 = "RekapSemester2";
 
@@ -929,28 +929,24 @@ const AttendanceTab: React.FC<{
 
     try {
       const formattedDate = formatDateDDMMYYYY(date);
-      const url = `${endpoint}?action=attendanceHistory`;
+      // ✅ Kirim parameter tanggal dan kelas ke server
+      const url = `${endpoint}?action=attendanceHistory&tanggal=${formattedDate}&kelas=${selectedKelas}`;
       const response = await fetch(url, { method: "GET", mode: "cors" });
 
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          const allAttendanceData = result.data;
-          const filteredData = allAttendanceData.filter((record: any) => {
-            const matchesDate = record.tanggal === formattedDate;
-            const matchesClass = String(record.kelas).trim() === selectedKelas;
-            return matchesDate && matchesClass;
-          });
+          // ✅ Tidak perlu filter lagi di client karena sudah difilter server
+          const filteredData = result.data;
 
           setExistingAttendanceData(filteredData);
 
           const existingAttendanceRecord: { [key: string]: AttendanceStatus } =
             {};
-          const existingKeteranganRecord: { [key: string]: string } = {}; // TAMBAHKAN
+          const existingKeteranganRecord: { [key: string]: string } = {};
           const existingIds = new Set<string>();
 
-          const studentsToCheck = filteredStudents;
-          studentsToCheck.forEach((student) => {
+          filteredStudents.forEach((student) => {
             const existingRecord = filteredData.find(
               (record: any) => record.nama === student.name
             );
@@ -958,11 +954,11 @@ const AttendanceTab: React.FC<{
               existingAttendanceRecord[student.id] =
                 existingRecord.status as AttendanceStatus;
               existingKeteranganRecord[student.id] =
-                existingRecord.keterangan || ""; // TAMBAHKAN
+                existingRecord.keterangan || "";
               existingIds.add(student.id);
             } else {
               existingAttendanceRecord[student.id] = "" as any;
-              existingKeteranganRecord[student.id] = ""; // TAMBAHKAN
+              existingKeteranganRecord[student.id] = "";
             }
           });
 
@@ -970,13 +966,10 @@ const AttendanceTab: React.FC<{
             ...prev,
             [date]: existingAttendanceRecord,
           }));
-
-          // TAMBAHKAN: Set keterangan state
           setKeterangan((prev) => ({
             ...prev,
             [date]: existingKeteranganRecord,
           }));
-
           setExistingStudentIds(existingIds);
         }
       }

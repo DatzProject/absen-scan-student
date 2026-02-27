@@ -196,6 +196,7 @@ const AttendanceTab: React.FC<{
   );
   const [fotoAbsensiUrl, setFotoAbsensiUrl] = useState<string | null>(null);
   const [isUploadingFoto, setIsUploadingFoto] = useState<boolean>(false);
+  const [isLoadingFoto, setIsLoadingFoto] = useState<boolean>(false);
   const [previewFoto, setPreviewFoto] = useState<string | null>(null);
   const [fotoToUpload, setFotoToUpload] = useState<string | null>(null);
   const [isDeletingFoto, setIsDeletingFoto] = useState<boolean>(false);
@@ -638,6 +639,8 @@ const AttendanceTab: React.FC<{
   };
 
   const loadFotoAbsensi = async () => {
+    setIsLoadingFoto(true);
+    setFotoAbsensiUrl(null); // ← reset dulu sebelum fetch
     try {
       const formattedDate = formatDateDDMMYYYY(date);
       const url = `${endpoint}?action=fotoAbsensi&tanggal=${formattedDate}&kelas=${selectedKelas}`;
@@ -648,14 +651,16 @@ const AttendanceTab: React.FC<{
         if (result.success) {
           setFotoAbsensiUrl(result.fotoUrl);
         } else {
-          setFotoAbsensiUrl(null); // ✅ reset jika tidak ada foto
+          setFotoAbsensiUrl(null);
         }
       } else {
-        setFotoAbsensiUrl(null); // ✅ reset jika response tidak ok
+        setFotoAbsensiUrl(null);
       }
     } catch (error) {
       console.error("Error loading foto absensi:", error);
-      setFotoAbsensiUrl(null); // ✅ reset jika error
+      setFotoAbsensiUrl(null);
+    } finally {
+      setIsLoadingFoto(false); // ← selesai loading
     }
   };
 
@@ -1372,9 +1377,18 @@ const AttendanceTab: React.FC<{
                 <p className="text-sm text-gray-500 mb-2">Foto Kelas</p>
                 <button
                   onClick={handleUploadFotoAbsensi}
-                  disabled={isUploadingFoto || allStudentsHaveData}
+                  disabled={
+                    isUploadingFoto || isLoadingFoto || !!fotoAbsensiUrl
+                  }
+                  title={
+                    isLoadingFoto
+                      ? "Mengecek foto..."
+                      : fotoAbsensiUrl
+                      ? "Foto sudah diupload"
+                      : "Upload foto kelas"
+                  }
                   className={`px-4 py-2 rounded-lg font-semibold shadow-md transition-colors ${
-                    isUploadingFoto || allStudentsHaveData
+                    isUploadingFoto || isLoadingFoto || !!fotoAbsensiUrl
                       ? "bg-gray-400 cursor-not-allowed text-white"
                       : "bg-purple-600 hover:bg-purple-700 text-white"
                   }`}
